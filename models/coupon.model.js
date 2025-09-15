@@ -20,12 +20,7 @@ const couponSchema = new mongoose.Schema(
         isActive: {
             type: Boolean,
             required: true,
-        },
-        userId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            required: true,
-            unique: true,
+            default: true,
         },
     },
     {
