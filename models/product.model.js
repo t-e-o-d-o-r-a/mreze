@@ -19,7 +19,8 @@ const productSchema = new mongoose.Schema({
         required: [true, "Product image is required"],
     },
     category: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
         required: [true, "Product category is required"],
     },
     isFeatured: {

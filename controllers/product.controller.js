@@ -1,10 +1,11 @@
 import Product from "../models/product.model.js";
+import Category from "../models/category.model.js";
 import { redis } from "../lib/redis.js";
 import cloudinary from "../lib/cloudinary.js";
 
 export const getAllProducts = async (req, res) => {
     try {
-        const products = await Product.find({}); // da nadje sve, bez ikakvih filtera
+        const products = await Product.find({}).populate("category", "name description"); // da nadje sve, bez ikakvih filtera
         res.json({ products });
 
     } catch (error) {
@@ -22,7 +23,7 @@ export const getFeaturedProducts = async (req, res) => {
         }
 
         // ako nisu u redis-u, onda se ucitaju iz mongodb-a
-        featuredProducts = await Product.find({ isFeatured: true }).lean(); // lean vraca obicne JS objekte umesto mongodb dokumenta
+        featuredProducts = await Product.find({ isFeatured: true }).populate("category", "name description").lean(); // lean vraca obicne JS objekte umesto mongodb dokumenta
 
         if (!featuredProducts) {
             return res.status(404).json({ message: "No featured products found" });
@@ -46,6 +47,11 @@ export const createProduct = async (req, res) => {
             await cloudinary.uploader.upload(image, { folder: "products" });
         }
 
+        const existingCategory = await Category.findById(category);
+        if (!existingCategory) {
+            return res.status(400).json({ error: "Invalid category" });
+        }
+
         const product = await Product.create({
             name,
             description,
@@ -53,6 +59,8 @@ export const createProduct = async (req, res) => {
             image: cloudinaryResponse?.secure_url ? cloudinaryResponse.secure_url : "",
             category,
         });
+
+        product = await product.populate("category", "name description");
 
         res.status(201).json(product);
 
@@ -107,7 +115,9 @@ export const getRecommendedProducts = async (req, res) => {
             },
         ]);
 
-        res.json(products);
+        const populatedProducts = await Product.populate(products, { path: "category", select: "name description" });
+
+        res.json(populatedProducts);
 
     } catch (error) {
         console.log("Error in getRecommendedProducts controller", error.message);
@@ -118,7 +128,7 @@ export const getRecommendedProducts = async (req, res) => {
 export const getProductsByCategory = async (req, res) => {
     try {
         const { category } = req.params;
-        const products = await Product.find({ category });
+        const products = await Product.find({ category }).populate("category", "name description");
 
         res.json(products);
 
