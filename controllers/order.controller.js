@@ -1,17 +1,19 @@
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
+import User from "../models/user.model.js";
 
 export const createOrder = async (req, res) => {
     try {
-        const { products, couponCode } = req.body;
+        const { couponCode } = req.body;
+        const user = await User.findById(req.user._id).populate("cartItems.product");
 
-        if (!Array.isArray(products) || products.length === 0) {
-            return res.status(400).json({ error: "Products array cannot be empty" });
+        if (!user.cartItems.length) {
+            return res.status(400).json({ error: "Cart is empty" });
         }
 
         // ukupan iznos
-        let totalAmount = products.reduce((sum, item) => {
-            return sum + item.price * item.quantity;
+        let totalAmount = user.cartItems.reduce((sum, item) => {
+            return sum + item.product.price * item.quantity;
         }, 0);
 
         // kupon
@@ -36,11 +38,19 @@ export const createOrder = async (req, res) => {
         // nova porudzbina
         const newOrder = new Order({
             user: req.user._id,
-            products: products.map(p => ({ product: p._id, quantity: p.quantity, price: p.price })),
+            products: user.cartItems.map(item => ({
+                product: item.product._id,
+                quantity: item.quantity,
+                price: item.product.price,
+            })),
             totalAmount,
             status: "pending",
         });
         await newOrder.save();
+
+        // prazni se korpa
+        user.cartItems = [];
+        await user.save();
 
         res.status(201).json({ 
             success: true,
