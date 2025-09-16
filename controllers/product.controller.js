@@ -40,29 +40,41 @@ export const getFeaturedProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
     try {
-        const { name, description, price, image, category } = req.body;
+        const { name, description, price, category } = req.body;
 
-        let cloudinaryResponse = null;
-        if (image) {
-            await cloudinary.uploader.upload(image, { folder: "products" });
+        if (!req.file) {
+            return res.status(400).json({ error: "Product image is required" });
         }
 
-        const existingCategory = await Category.findById(category);
-        if (!existingCategory) {
-            return res.status(400).json({ error: "Invalid category" });
+        // upload slike na Cloudinary
+        const cloudinaryResponse = await cloudinary.uploader.upload_stream(
+        { folder: "products" },
+        async (error, result) => {
+            if (error) {
+                return res.status(500).json({ error: "Image upload failed" });
+            }
+
+            const existingCategory = await Category.findById(category);
+            if (!existingCategory) {
+                return res.status(400).json({ error: "Invalid category" });
+            }
+
+            let product = await Product.create({
+                name,
+                description,
+                price,
+                image: result.secure_url,
+                category,
+            });
+
+            product = await product.populate("category", "name description");
+
+            return res.status(201).json(product);
         }
+        );
 
-        const product = await Product.create({
-            name,
-            description,
-            price,
-            image: cloudinaryResponse?.secure_url ? cloudinaryResponse.secure_url : "",
-            category,
-        });
-
-        product = await product.populate("category", "name description");
-
-        res.status(201).json(product);
+        // stream-ovanje fajla u Cloudinary
+        cloudinaryResponse.end(req.file.buffer);
 
     } catch (error) {
         console.log("Error in createProduct controller", error.message);
