@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import { redis } from "../lib/redis.js";
 
 // proverava da li je user autentifikovan (pomocu access tokena)
 export const protectRoute = async (req, res, next) => {
@@ -10,6 +11,13 @@ export const protectRoute = async (req, res, next) => {
             return res.status(401).json({ message: "Unauthorized: no access token provided" });
         }
 
+        // da li je token na blacklisti
+        const isBlacklisted = await redis.get(`blacklist:${accessToken}`);
+        if (isBlacklisted) {
+            return res.status(401).json({ message: "Unauthorized: token is blacklisted" });
+        }
+
+        // da li je token ispravan (verifikacija)
         try {
             const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
             const user = await User.findById(decoded.userId).select("-password");

@@ -85,12 +85,21 @@ export const login = async (req, res) => {
     }
 }
 
+// ako se korisnik izloguje, a access token mu i dalje vazi, on ce biti blacklisted
 export const logout = async (req, res) => {
     try {
+        const accessToken = req.cookies.accessToken;
         const refreshToken = req.cookies.refreshToken;
+
         if (refreshToken) {
             const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
             await redis.del(`refresh_token:${decoded.userId}`);
+        }
+
+        if (accessToken) {
+            const decoded = jwt.decode(accessToken);
+            const expiresInSeconds = decoded.exp - Math.floor(Date.now() / 1000);
+            await redis.set(`blacklist:${accessToken}`, "true", "EX", expiresInSeconds);
         }
 
         res.clearCookie("accessToken");
