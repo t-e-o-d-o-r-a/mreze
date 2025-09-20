@@ -19,17 +19,17 @@ const orderSchema = new mongoose.Schema(
 					required: true,
 					min: 1,
 				},
-				price: {
-					type: Number,
-					required: true,
-					min: 0,
-				},
 			},
 		],
 		totalAmount: {
 			type: Number,
 			required: true,
 			min: 0,
+		},
+		coupon: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Coupon",
+			default: null,
 		},
 		status: {
 			type: String,

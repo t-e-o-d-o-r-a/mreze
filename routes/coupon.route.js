@@ -5,6 +5,6 @@ import { validateCoupon, createCoupon } from "../controllers/coupon.controller.j
 const router = express.Router();
 
 router.post("/", protectRoute, adminRoute, createCoupon); // samo admin kreira kupon
-router.post("/validate", protectRoute, validateCoupon);
+router.get("/validate/:code", protectRoute, validateCoupon);
 
 export default router;

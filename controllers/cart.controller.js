@@ -26,6 +26,15 @@ export const addToCart = async (req, res) => {
         const { id: productId } = req.params;
         const user = req.user;
 
+        if (!productId) {
+            return res.status(400).json({ message: "Product ID is required" });
+        }
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
         const existingItem = user.cartItems.find(item => item.product.toString() === productId);
         if (existingItem) {
             existingItem.quantity += 1;
@@ -63,6 +72,12 @@ export const removeFromCart = async (req, res) => {
         if (!productId) {
             return res.status(400).json({ message: "Product ID is required" });
         }
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
 
         const user = req.user;
 

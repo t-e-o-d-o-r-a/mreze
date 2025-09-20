@@ -41,9 +41,9 @@ export const createOrder = async (req, res) => {
             products: user.cartItems.map(item => ({
                 product: item.product._id,
                 quantity: item.quantity,
-                price: item.product.price,
             })),
             totalAmount,
+            coupon,
             status: "pending",
         });
         await newOrder.save();

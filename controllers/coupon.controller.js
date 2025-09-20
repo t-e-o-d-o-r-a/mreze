@@ -29,10 +29,7 @@ export const createCoupon = async (req, res) => {
 
 export const validateCoupon = async (req, res) => {
     try {
-        const { code } = req.body;
-        if (!code) {
-            return res.status(400).json({ valid: false, message: "Coupon code is required" });
-        }
+        const { code } = req.params;
 
         const coupon = await Coupon.findOne({ code: code, isActive: true });
 

@@ -1,4 +1,5 @@
 import Category from "../models/category.model.js";
+import Product from "../models/product.model.js";
 
 export const getAllCategories = async (req, res) => {
     try {
@@ -36,6 +37,11 @@ export const deleteCategory = async (req, res) => {
 
         if (!category) {
             return res.status(404).json({ error: "Category not found" });
+        }
+
+        const productsInCategory = await Product.findOne({ category: id });
+        if (productsInCategory) {
+            return res.status(400).json({ message: "Cannot delete category: it has products assigned to it" });
         }
 
         await Category.findByIdAndDelete(id);

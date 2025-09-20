@@ -1,7 +1,8 @@
 import Product from "../models/product.model.js";
 import Category from "../models/category.model.js";
 import { redis } from "../lib/redis.js";
-import cloudinary from "../lib/cloudinary.js";
+import cloudinary from "../lib/cloudinary.js"; 
+import User from "../models/user.model.js";
 
 export const getAllProducts = async (req, res) => {
     try {
@@ -102,6 +103,13 @@ export const deleteProduct = async (req, res) => {
         }
 
         await Product.findByIdAndDelete(req.params.id);
+
+        // ako postoji u necijoj korpi, obrisace se i odatle
+        await User.updateMany(
+            { "cartItems.product": req.params.id },
+            { $pull: { cartItems: { product: req.params.id } } }
+        );
+
         res.json({ message: "Product deleted successfully" });
         
     } catch (error) {
